@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peakero — Agence IA : agents autonomes, systèmes multi-agents, RAG multimodal & intégration</title>
+    <meta name="description" content="Peakero, agence IA généraliste. Agents IA autonomes, systèmes multi-agents, pipelines RAG multimodaux et intégration directe dans vos systèmes. Architectures IA sur-mesure, de la conception à la production.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --bg: #05060c;
+            --ink: #f4f6ff;
+            --ink-soft: rgba(244, 246, 255, 0.72);
+            --ink-faint: rgba(244, 246, 255, 0.5);
+            --line: rgba(255, 255, 255, 0.12);
+            --line-strong: rgba(255, 255, 255, 0.22);
+            --accent: #5b9bff;
+            --accent-2: #9b6bff;
+            --accent-3: #38e8d8;
+            --glass: rgba(255, 255, 255, 0.045);
+            --glass-strong: rgba(255, 255, 255, 0.07);
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+            --radius: 18px;
+            --maxw: 1180px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .logo-text, .stat-value {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            letter-spacing: -0.02em;
+        }
+
+        ::selection { background: rgba(91, 155, 255, 0.35); color: #fff; }
+
+        /* ---------- Animated background ---------- */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background:
+                radial-gradient(900px 600px at 75% -10%, rgba(155, 107, 255, 0.18), transparent 60%),
+                radial-gradient(900px 700px at 10% 10%, rgba(56, 232, 216, 0.12), transparent 60%),
+                var(--bg);
+        }
+        #bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(1200px 700px at 50% -5%, transparent 40%, rgba(5, 6, 12, 0.55) 100%),
+                linear-gradient(180deg, rgba(5,6,12,0.0) 0%, rgba(5,6,12,0.35) 55%, rgba(5,6,12,0.7) 100%);
+        }
+
+        .container { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+        /* ---------- Navbar ---------- */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 28px;
+            transition: background 0.4s ease, border-color 0.4s ease, padding 0.3s ease;
+            border-bottom: 1px solid transparent;
+        }
+        .nav.scrolled {
+            background: rgba(8, 9, 16, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--line);
+            padding: 12px 28px;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-mark {
+            position: relative; width: 30px; height: 30px; flex: none;
+        }
+        .logo-mark::before, .logo-mark::after {
+            content: ""; position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid var(--ink);
+        }
+        .logo-mark::after {
+            inset: 4px; border-width: 1px; opacity: 0.55;
+            border-color: var(--accent-3);
+        }
+        .logo-text { font-size: 22px; font-weight: 700; letter-spacing: 3px; }
+        .nav-links { display: flex; align-items: center; gap: 30px; }
+        .nav-links a {
+            color: var(--ink-soft); text-decoration: none; font-size: 15px; font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .nav-links a:hover { color: var(--ink); }
+        .nav-cta {
+            padding: 9px 20px; border: 1px solid var(--line-strong); border-radius: 999px;
+            background: var(--glass); backdrop-filter: blur(8px);
+            font-size: 14px !important; font-weight: 600 !important; color: var(--ink) !important;
+        }
+        .nav-cta:hover { background: var(--glass-strong); border-color: var(--accent); }
+        .nav-toggle { display: none; background: none; border: 0; cursor: pointer; }
+        .nav-toggle span { display: block; width: 24px; height: 2px; background: var(--ink); margin: 5px 0; border-radius: 2px; transition: 0.3s; }
+
+        /* ---------- Buttons ---------- */
+        .btn {
+            position: relative; display: inline-flex; align-items: center; gap: 10px;
+            padding: 16px 34px; border-radius: 999px; text-decoration: none;
+            font-weight: 600; font-size: 16px; cursor: pointer; border: 1px solid transparent;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+            overflow: hidden;
+        }
+        .btn-primary {
+            color: #06070d;
+            background: linear-gradient(120deg, var(--accent-3), var(--accent), var(--accent-2));
+            background-size: 200% 100%;
+            box-shadow: 0 12px 40px rgba(91, 155, 255, 0.35);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 55px rgba(91, 155, 255, 0.5); background-position: 100% 0; }
+        .btn-primary::after {
+            content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,0.55), transparent);
+            transform: skewX(-20deg); transition: left 0.7s ease;
+        }
+        .btn-primary:hover::after { left: 140%; }
+        .btn-ghost {
+            color: var(--ink); border-color: var(--line-strong); background: var(--glass);
+            backdrop-filter: blur(8px);
+        }
+        .btn-ghost:hover { border-color: var(--accent); background: var(--glass-strong); transform: translateY(-2px); }
+
+        /* ---------- Sections ---------- */
+        section { position: relative; scroll-margin-top: 90px; }
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--accent-3); margin-bottom: 18px;
+        }
+        .eyebrow::before { content: ""; width: 24px; height: 1px; background: var(--accent-3); }
+        .section-head { max-width: 720px; margin: 0 auto 56px; text-align: center; }
+        .section-head .eyebrow { justify-content: center; }
+        .section-title { font-size: clamp(30px, 4.5vw, 46px); font-weight: 700; line-height: 1.1; }
+        .section-sub { color: var(--ink-soft); font-size: 18px; margin-top: 16px; }
+
+        .gradient-text {
+            background: linear-gradient(110deg, var(--accent-3), var(--accent) 45%, var(--accent-2));
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* ---------- Hero ---------- */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 130px 24px 80px;
+        }
+        .hero-inner { max-width: 880px; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px;
+            border: 1px solid var(--line); border-radius: 999px; background: var(--glass);
+            backdrop-filter: blur(8px); font-size: 13px; color: var(--ink-soft); margin-bottom: 28px;
+        }
+        .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-3); box-shadow: 0 0 12px var(--accent-3); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity: 0.5; transform: scale(0.8);} }
+        .hero h1 { font-size: clamp(40px, 6.4vw, 72px); line-height: 1.04; font-weight: 700; }
+        .hero .subtitle { font-size: clamp(17px, 2.2vw, 21px); color: var(--ink-soft); max-width: 640px; margin: 26px auto 38px; }
+        .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .hero-trust { margin-top: 46px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .hero-trust .label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-faint); }
+        .hero-badges { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .hero-badges span {
+            padding: 7px 18px; border: 1px solid var(--line); border-radius: 999px;
+            background: var(--glass); font-size: 14px; color: var(--ink-soft); font-weight: 500;
+        }
+
+        /* ---------- Stats ---------- */
+        .stats { padding: 40px 24px 30px; }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+            border: 1px solid var(--line); border-radius: var(--radius);
+            background: var(--glass); backdrop-filter: blur(12px); padding: 36px 24px;
+        }
+        .stat { text-align: center; position: relative; }
+        .stat:not(:last-child)::after {
+            content: ""; position: absolute; right: -10px; top: 15%; height: 70%; width: 1px; background: var(--line);
+        }
+        .stat-value { font-size: clamp(34px, 4.5vw, 50px); font-weight: 700; line-height: 1; }
+        .stat-label { color: var(--ink-soft); font-size: 14px; margin-top: 10px; }
+
+        /* ---------- Generic block ---------- */
+        .block { padding: 100px 24px; }
+
+        /* ---------- Cards grid ---------- */
+        .grid { display: grid; gap: 22px; }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .card {
+            position: relative; padding: 30px; border-radius: var(--radius);
+            border: 1px solid var(--line); background: var(--glass);
+            backdrop-filter: blur(12px); transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+            overflow: hidden;
+        }
+        .card::before {
+            content: ""; position: absolute; inset: 0; border-radius: var(--radius);
+            background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 0%), rgba(91,155,255,0.12), transparent 45%);
+            opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+        }
+        .card:hover { transform: translateY(-6px); border-color: var(--line-strong); background: var(--glass-strong); }
+        .card:hover::before { opacity: 1; }
+        .card .num { font-family: 'Space Grotesk'; font-size: 14px; color: var(--accent-3); font-weight: 600; letter-spacing: 1px; }
+        .card h3 { font-size: 22px; margin: 14px 0 12px; font-weight: 600; }
+        .card p { color: var(--ink-soft); font-size: 16px; }
+
+        .card-icon {
+            width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(140deg, rgba(56,232,216,0.18), rgba(155,107,255,0.18));
+            border: 1px solid var(--line); margin-bottom: 18px;
+        }
+        .card-icon svg { width: 26px; height: 26px; stroke: var(--ink); fill: none; stroke-width: 1.8; }
+        .service .subtitle-sm { font-size: 12px; color: var(--ink-faint); font-style: italic; margin-bottom: 12px; }
+        .service .benefit { font-size: 14px; color: var(--ink-soft); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+        .service .benefit b { color: var(--accent-3); font-weight: 600; }
+
+        /* ---------- Solution band ---------- */
+        .solution-box {
+            max-width: 880px; margin: 0 auto; text-align: center; padding: 60px 44px;
+            border-radius: 26px; border: 1px solid var(--line-strong);
+            background: linear-gradient(160deg, rgba(91,155,255,0.10), rgba(155,107,255,0.06));
+            backdrop-filter: blur(14px); box-shadow: var(--shadow);
+        }
+        .solution-box h2 { font-size: clamp(28px, 4vw, 40px); margin-bottom: 20px; }
+        .solution-box p { font-size: 19px; color: var(--ink-soft); max-width: 680px; margin: 0 auto; }
+
+        /* ---------- FAQ ---------- */
+        .faq-wrap { max-width: 780px; margin: 0 auto; }
+        .faq-item {
+            border: 1px solid var(--line); border-radius: 14px; background: var(--glass);
+            margin-bottom: 14px; overflow: hidden; transition: border-color 0.3s ease;
+        }
+        .faq-item.active { border-color: var(--line-strong); }
+        .faq-q {
+            display: flex; justify-content: space-between; align-items: center; gap: 16px;
+            padding: 22px 24px; cursor: pointer; font-weight: 600; font-size: 18px; user-select: none;
+        }
+        .faq-toggle { flex: none; width: 26px; height: 26px; position: relative; transition: transform 0.3s ease; }
+        .faq-toggle::before, .faq-toggle::after {
+            content: ""; position: absolute; background: var(--accent-3); border-radius: 2px;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+        .faq-toggle::before { width: 14px; height: 2px; }
+        .faq-toggle::after { width: 2px; height: 14px; transition: transform 0.3s ease; }
+        .faq-item.active .faq-toggle::after { transform: translate(-50%, -50%) rotate(90deg); opacity: 0; }
+        .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+        .faq-a-inner { padding: 0 24px 22px; color: var(--ink-soft); font-size: 16px; }
+
+        /* ---------- Final CTA ---------- */
+        .final-cta { text-align: center; }
+        .final-cta h2 { font-size: clamp(32px, 5vw, 52px); font-weight: 700; }
+        .final-cta p { color: var(--ink-soft); font-size: 19px; max-width: 640px; margin: 20px auto 36px; }
+
+        /* ---------- Contact form ---------- */
+        .form-card {
+            max-width: 560px; margin: 0 auto; padding: 40px; border-radius: 22px;
+            border: 1px solid var(--line); background: var(--glass-strong); backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+        }
+        .form-card h2 { font-size: 30px; text-align: center; margin-bottom: 8px; }
+        .form-card .hint { text-align: center; color: var(--ink-soft); margin-bottom: 28px; font-size: 15px; }
+        form { display: flex; flex-direction: column; gap: 16px; }
+        .field { display: flex; flex-direction: column; gap: 7px; }
+        .field label { font-size: 13px; color: var(--ink-soft); font-weight: 500; }
+        .field input, .field textarea {
+            width: 100%; padding: 13px 16px; border-radius: 12px;
+            border: 1px solid var(--line); background: rgba(255,255,255,0.03); color: var(--ink);
+            font-family: inherit; font-size: 15px; transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .field input::placeholder, .field textarea::placeholder { color: var(--ink-faint); }
+        .field input:focus, .field textarea:focus {
+            outline: none; border-color: var(--accent); background: rgba(91,155,255,0.06);
+        }
+        .form-card .btn-primary { justify-content: center; width: 100%; margin-top: 6px; }
+        #form-status { min-height: 22px; text-align: center; font-size: 15px; margin-top: 4px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* ---------- Footer ---------- */
+        footer {
+            padding: 60px 24px 40px; border-top: 1px solid var(--line); text-align: center;
+            background: rgba(5, 6, 12, 0.5); backdrop-filter: blur(10px);
+        }
+        .footer-logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 22px; }
+        .footer-contact { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+        .footer-contact a {
+            color: var(--ink); text-decoration: none; font-weight: 500; font-size: 15px;
+            padding: 10px 22px; border: 1px solid var(--line); border-radius: 999px; background: var(--glass);
+            transition: border-color 0.25s ease, background 0.25s ease;
+        }
+        .footer-contact a:hover { border-color: var(--accent); background: var(--glass-strong); }
+        footer .copy { color: var(--ink-faint); font-size: 14px; }
+
+        /* ---------- Scroll reveal ---------- */
+        .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s cubic-bezier(.2,.7,.2,1), transform 0.7s cubic-bezier(.2,.7,.2,1); }
+        .reveal.in { opacity: 1; transform: none; }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 900px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 30px 20px; }
+            .stat:not(:last-child)::after { display: none; }
+        }
+        @media (max-width: 720px) {
+            .nav-links { display: none; }
+            .nav-links.open {
+                display: flex; flex-direction: column; position: absolute; top: 100%; right: 16px; left: 16px;
+                background: rgba(8,9,16,0.92); backdrop-filter: blur(16px); padding: 22px; border-radius: 16px;
+                border: 1px solid var(--line); gap: 18px;
+            }
+            .nav-toggle { display: block; }
+            .grid-3 { grid-template-columns: 1fr; }
+            .grid-4 { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .block { padding: 72px 24px; }
+            .solution-box { padding: 44px 26px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { scroll-behavior: auto !important; }
+            .reveal { opacity: 1; transform: none; transition: none; }
+            .pill .dot { animation: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div id="bg-overlay"></div>
+
+    <!-- Nav -->
+    <nav class="nav" id="nav">
+        <a href="#top" class="logo">
+            <span class="logo-mark"></span>
+            <span class="logo-text">PEAKERO</span>
+        </a>
+        <div class="nav-links" id="navLinks">
+            <a href="#services">Services</a>
+            <a href="#solution">Solution</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact" class="nav-cta">Réserver une démo</a>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero" id="top">
+        <div class="hero-inner">
+            <div class="pill reveal"><span class="dot"></span> Agents IA · multi-agents · RAG multimodal · sur-mesure</div>
+            <h1 class="reveal">Déployez l'IA la plus avancée <span class="gradient-text">directement dans vos process</span></h1>
+            <p class="subtitle reveal">Agents IA autonomes, systèmes multi-agents, applications multimodales et pipelines RAG — intégrés directement dans vos systèmes. On conçoit des architectures IA complexes, sur-mesure ; vous récoltez les résultats.</p>
+            <div class="hero-actions reveal">
+                <a href="#contact" class="btn btn-primary">Réserver une démo gratuite →</a>
+                <a href="#services" class="btn btn-ghost">Découvrir les services</a>
+            </div>
+            <div class="hero-trust reveal">
+                <span class="label">Approuvé par les dirigeants d'entreprise</span>
+                <div class="hero-badges">
+                    <span>PME</span><span>Start-ups</span><span>Grands comptes</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid reveal">
+                <div class="stat"><div class="stat-value" data-count="40" data-suffix="%">0</div><div class="stat-label">de tâches répétitives éliminées</div></div>
+                <div class="stat"><div class="stat-value" data-count="30" data-suffix=" j">0</div><div class="stat-label">pour des résultats mesurables</div></div>
+                <div class="stat"><div class="stat-value" data-count="24" data-suffix="/7">0</div><div class="stat-label">de disponibilité opérationnelle</div></div>
+                <div class="stat"><div class="stat-value" data-count="100" data-suffix="%">0</div><div class="stat-label">intégré à vos outils existants</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem -->
+    <section class="block" id="defis">
+        <div class="container">
+            <div class="section-head reveal">
+                <span class="eyebrow">Le constat</span>
+                <h2 class="section-title">Vos défis quotidiens</h2>
+                <p class="section-sub">Ce qui freine la croissance se cache souvent dans l'opérationnel invisible.</p>
+            </div>
+            <div class="grid grid-3">
+                <div class="card reveal">
+                    <div class="num">01</div>
+                    <h3>Temps perdu</h3>
+                    <p>Vos équipes passent jusqu'à 40 % de leur temps sur des tâches répétitives qui pourraient être automatisées.</p>
+                </div>
+                <div class="card reveal">
+                    <div class="num">02</div>
+                    <h3>Gestion chaotique</h3>
+                    <p>Plannings et flux de travail manuels créent des erreurs coûteuses et des opportunités manquées.</p>
+                </div>
+                <div class="card reveal">
+                    <div class="num">03</div>
+                    <h3>Coûts croissants</h3>
+                    <p>L'inefficacité opérationnelle grignote vos marges et ralentit votre croissance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution -->
+    <section class="block" id="solution">
+        <div class="container">
+            <div class="solution-box reveal">
+                <span class="eyebrow">La solution</span>
+                <h2>L'IA de pointe, industrialisée pour votre métier</h2>
+                <p>De l'agent autonome à l'orchestration multi-agents, en passant par les pipelines RAG multimodaux et l'intégration directe à vos systèmes (CRM, ERP, API internes), on conçoit et déploie les architectures IA les plus avancées — taillées sur-mesure pour vos process.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services -->
+    <section class="block" id="services">
+        <div class="container">
+            <div class="section-head reveal">
+                <span class="eyebrow">Nos expertises</span>
+                <h2 class="section-title">Des architectures IA sur-mesure, du prototype à la production</h2>
+                <p class="section-sub">Agents, systèmes multi-agents, RAG multimodal, intégrations — on couvre toute la chaîne technique.</p>
+            </div>
+            <div class="grid grid-4">
+                <div class="card service reveal">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V4" stroke-linecap="round"/><circle cx="12" cy="3.4" r="1.1"/><circle cx="9.2" cy="13.2" r="1.1"/><circle cx="14.8" cy="13.2" r="1.1"/><path d="M9 19v1.5M15 19v1.5" stroke-linecap="round"/></svg>
+                    </div>
+                    <h3>Agents IA autonomes</h3>
+                    <p class="subtitle-sm">Raisonnement &amp; action</p>
+                    <p>Des agents qui planifient, raisonnent et exécutent des tâches complexes en autonomie : function calling, accès outils, mémoire long terme.</p>
+                    <p class="benefit"><b>Capacité —</b> ils prennent en charge des process entiers, pas seulement des réponses.</p>
+                </div>
+                <div class="card service reveal">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 6h8M7.5 7.9 10.7 16M16.5 7.9 13.3 16" stroke-linecap="round"/></svg>
+                    </div>
+                    <h3>Systèmes multi-agents</h3>
+                    <p class="subtitle-sm">Orchestration distribuée</p>
+                    <p>Plusieurs agents spécialisés qui collaborent, se délèguent des sous-tâches et s'orchestrent pour des workflows de bout en bout.</p>
+                    <p class="benefit"><b>Capacité —</b> la complexité absorbée par l'architecture, pas par vos équipes.</p>
+                </div>
+                <div class="card service reveal">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z" stroke-linejoin="round"/><path d="M3 12.5l9 5 9-5M3 16.5l9 5 9-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h3>RAG &amp; apps multimodales</h3>
+                    <p class="subtitle-sm">Texte, voix, image, vidéo</p>
+                    <p>Pipelines RAG branchés sur vos données (embeddings, recherche vectorielle) et modèles multimodaux qui traitent tous les formats.</p>
+                    <p class="benefit"><b>Capacité —</b> des réponses précises, ancrées sur VOTRE connaissance métier.</p>
+                </div>
+                <div class="card service reveal">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><path d="M9.5 13.5a3 3 0 0 0 3 0l3-3a3 3 0 0 0-4.2-4.2l-1 1" stroke-linecap="round"/><path d="M14.5 10.5a3 3 0 0 0-3 0l-3 3a3 3 0 0 0 4.2 4.2l1-1" stroke-linecap="round"/></svg>
+                    </div>
+                    <h3>Intégration &amp; déploiement</h3>
+                    <p class="subtitle-sm">Dans vos systèmes existants</p>
+                    <p>Connexion directe à votre stack via API (CRM, ERP, bases de données), déploiement sécurisé cloud ou on-premise, en production.</p>
+                    <p class="benefit"><b>Capacité —</b> l'IA opère dans vos pipelines réels, pas dans une démo.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="block" id="faq">
+        <div class="container">
+            <div class="section-head reveal">
+                <span class="eyebrow">Questions fréquentes</span>
+                <h2 class="section-title">Ce que vous vous demandez sûrement</h2>
+            </div>
+            <div class="faq-wrap">
+                <div class="faq-item reveal">
+                    <div class="faq-q">Combien de temps prend l'intégration ?<span class="faq-toggle"></span></div>
+                    <div class="faq-a"><div class="faq-a-inner">Le déploiement complet prend entre 2 jours et 4 semaines selon la complexité de vos processus. Vous commencez à voir des résultats dès la première semaine de production.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <div class="faq-q">Est-ce compatible avec nos systèmes actuels ?<span class="faq-toggle"></span></div>
+                    <div class="faq-a"><div class="faq-a-inner">Oui. Nos solutions s'intègrent à la plupart des systèmes existants (CRM, ERP, outils de gestion). Un audit technique est réalisé lors de la consultation pour garantir une compatibilité totale.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <div class="faq-q">Que se passe-t-il après le déploiement ?<span class="faq-toggle"></span></div>
+                    <div class="faq-a"><div class="faq-a-inner">Vous bénéficiez d'un support continu : maintenance, optimisations, support technique et mises à jour régulières pour améliorer les performances.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <div class="faq-q">Nos données sont-elles sécurisées ?<span class="faq-toggle"></span></div>
+                    <div class="faq-a"><div class="faq-a-inner">Absolument. Nous appliquons des standards de sécurité stricts (chiffrement, conformité RGPD) et pouvons déployer des solutions sur site si nécessaire.</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA + Contact -->
+    <section class="block" id="contact">
+        <div class="container">
+            <div class="final-cta reveal" style="margin-bottom: 56px;">
+                <span class="eyebrow" style="display:inline-flex; justify-content:center;">Passons à l'action</span>
+                <h2>Prêt à transformer votre productivité ?</h2>
+                <p>Laissez-nous vos coordonnées : on revient vers vous pour comprendre vos besoins et vous montrer concrètement comment Peakero optimise vos opérations.</p>
+            </div>
+            <div class="form-card reveal">
+                <h2>Parlons-en</h2>
+                <p class="hint">Réponse sous 24h ouvrées.</p>
+                <form id="contact-form">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="nom">Nom</label>
+                            <input type="text" id="nom" name="nom" required>
+                        </div>
+                        <div class="field">
+                            <label for="entreprise">Entreprise</label>
+                            <input type="text" id="entreprise" name="entreprise" required>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="field">
+                            <label for="telephone">Téléphone</label>
+                            <input type="tel" id="telephone" name="telephone" required placeholder="+33 6 12 34 56 78">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="message">Votre besoin en quelques mots</label>
+                        <textarea id="message" name="message" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Envoyer ma demande</button>
+                    <div id="form-status"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-logo">
+            <span class="logo-mark"></span>
+            <span class="logo-text">PEAKERO</span>
+        </div>
+        <div class="footer-contact">
+            <a href="tel:+33695927660">+33 6 95 92 76 60</a>
+            <a href="mailto:brieuc@peakero.com">brieuc@peakero.com</a>
+        </div>
+        <p class="copy">© 2026 Peakero. Tous droits réservés.</p>
+    </footer>
+
+    <script>
+        /* ---------- Nav scroll state + mobile menu ---------- */
+        const nav = document.getElementById('nav');
+        const navLinks = document.getElementById('navLinks');
+        const navToggle = document.getElementById('navToggle');
+        const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 30);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+        navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+        navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('open')));
+
+        /* ---------- Scroll reveal ---------- */
+        const revealEls = document.querySelectorAll('.reveal');
+        if ('IntersectionObserver' in window) {
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach((e, i) => {
+                    if (e.isIntersecting) {
+                        const siblings = [...e.target.parentElement.querySelectorAll('.reveal')];
+                        e.target.style.transitionDelay = Math.min(siblings.indexOf(e.target), 5) * 0.08 + 's';
+                        e.target.classList.add('in');
+                        io.unobserve(e.target);
+                    }
+                });
+            }, { threshold: 0.12 });
+            revealEls.forEach(el => io.observe(el));
+        } else {
+            revealEls.forEach(el => el.classList.add('in'));
+        }
+
+        /* ---------- Animated counters ---------- */
+        const counters = document.querySelectorAll('[data-count]');
+        const animateCount = (el) => {
+            const target = +el.dataset.count;
+            const suffix = el.dataset.suffix || '';
+            const dur = 1400; const start = performance.now();
+            const step = (now) => {
+                const p = Math.min((now - start) / dur, 1);
+                const eased = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.round(target * eased) + suffix;
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        };
+        if ('IntersectionObserver' in window) {
+            const cio = new IntersectionObserver((entries) => {
+                entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); cio.unobserve(e.target); } });
+            }, { threshold: 0.5 });
+            counters.forEach(c => cio.observe(c));
+        } else { counters.forEach(c => c.textContent = c.dataset.count + (c.dataset.suffix || '')); }
+
+        /* ---------- Card spotlight follow ---------- */
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('pointermove', (e) => {
+                const r = card.getBoundingClientRect();
+                card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+                card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+            });
+        });
+
+        /* ---------- FAQ accordion ---------- */
+        document.querySelectorAll('.faq-item').forEach(item => {
+            const q = item.querySelector('.faq-q');
+            const a = item.querySelector('.faq-a');
+            q.addEventListener('click', () => {
+                const open = item.classList.contains('active');
+                document.querySelectorAll('.faq-item').forEach(i => {
+                    i.classList.remove('active');
+                    i.querySelector('.faq-a').style.maxHeight = null;
+                });
+                if (!open) { item.classList.add('active'); a.style.maxHeight = a.scrollHeight + 'px'; }
+            });
+        });
+
+        /* ---------- Contact form → FormSubmit (email direct) ---------- */
+        // Les leads arrivent par email sur l'adresse ci-dessous. Aucune config serveur.
+        // ⚠️ 1re soumission = FormSubmit envoie un email d'activation à valider (une seule fois).
+        // Astuce anti-spam : après activation, remplace l'email par ton code FormSubmit perso.
+        const form = document.getElementById('contact-form');
+        const formStatus = document.getElementById('form-status');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const formEndpoint = 'https://formsubmit.co/ajax/brieuc@peakero.com';
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.65';
+            formStatus.textContent = 'Envoi en cours…';
+            formStatus.style.color = 'var(--ink-soft)';
+            const payload = {
+                Nom: form.nom.value,
+                Entreprise: form.entreprise.value,
+                Email: form.email.value,
+                'Téléphone': form.telephone.value,
+                Message: form.message.value,
+                _subject: 'Nouveau lead Peakero — ' + form.entreprise.value,
+                _replyto: form.email.value,
+                _captcha: 'false'
+            };
+            fetch(formEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => {
+                if (r.ok) {
+                    formStatus.textContent = 'Merci ! Votre demande a bien été envoyée.';
+                    formStatus.style.color = 'var(--accent-3)';
+                    form.reset();
+                } else { throw new Error('bad response'); }
+            }).catch(() => {
+                formStatus.textContent = "Erreur lors de l'envoi. Réessayez ou écrivez-nous à brieuc@peakero.com.";
+                formStatus.style.color = '#ff6b6b';
+            }).finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '';
+            });
+        });
+
+        /* ---------- WebGL aurora background (GLSL ES 1.00 — no tanh) ---------- */
+        (function initBackground() {
+            const canvas = document.getElementById('bg-canvas');
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (typeof THREE === 'undefined') return; // gradient fallback already on canvas bg
+
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            } catch (err) { return; }
+
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            renderer.setPixelRatio(dpr);
+            renderer.setSize(window.innerWidth, window.innerHeight, false);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    iTime: { value: 0 },
+                    iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+                },
+                vertexShader: `void main(){ gl_Position = vec4(position, 1.0); }`,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float iTime;
+                    uniform vec2 iResolution;
+
+                    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+                    float noise(vec2 p){
+                        vec2 i = floor(p), f = fract(p);
+                        vec2 u = f * f * (3.0 - 2.0 * f);
+                        return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+                                   mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+                    }
+                    float fbm(vec2 p){
+                        float v = 0.0, a = 0.5;
+                        mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+                        for(int i = 0; i < 6; i++){ v += a * noise(p); p = m * p; a *= 0.5; }
+                        return v;
+                    }
+                    void main(){
+                        vec2 uv = (gl_FragCoord.xy * 2.0 - iResolution.xy) / iResolution.y;
+                        float t = iTime * 0.06;
+                        vec2 q = uv * 1.15;
+                        float n1 = fbm(q + vec2(0.0, t));
+                        float n2 = fbm(q + vec2(n1 * 1.6 + t * 0.5, n1 * 1.2 - t * 0.35));
+                        float n  = fbm(q + n2 * 1.5 + vec2(t * 0.6, 0.0));
+
+                        vec3 deep   = vec3(0.020, 0.024, 0.055);
+                        vec3 blue   = vec3(0.075, 0.36, 0.95);
+                        vec3 violet = vec3(0.46, 0.20, 0.86);
+                        vec3 cyan   = vec3(0.12, 0.86, 0.86);
+
+                        vec3 col = deep;
+                        col = mix(col, blue,   smoothstep(0.25, 0.78, n));
+                        col = mix(col, violet, smoothstep(0.45, 0.98, n2));
+                        col += cyan * pow(smoothstep(0.62, 1.0, n1), 3.0) * 0.55;
+
+                        float vig = 1.0 - 0.55 * dot(uv * 0.62, uv * 0.62);
+                        col *= clamp(vig, 0.0, 1.0);
+                        col += (hash(gl_FragCoord.xy + iTime) - 0.5) * 0.022;
+
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `
+            });
+
+            // Compile check: if the shader fails, keep the CSS gradient fallback.
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+            scene.add(mesh);
+
+            const resize = () => {
+                renderer.setSize(window.innerWidth, window.innerHeight, false);
+                material.uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+            };
+            window.addEventListener('resize', resize);
+
+            let running = true;
+            document.addEventListener('visibilitychange', () => {
+                running = !document.hidden;
+                if (running && !reduced) requestAnimationFrame(loop);
+            });
+
+            const start = performance.now();
+            const loop = () => {
+                if (!running) return;
+                material.uniforms.iTime.value = (performance.now() - start) * 0.001;
+                renderer.render(scene, camera);
+                if (!reduced) requestAnimationFrame(loop);
+            };
+
+            // one render always; animate only if motion allowed
+            renderer.render(scene, camera);
+            if (!reduced) requestAnimationFrame(loop);
+        })();
+    </script>
+</body>
+</html>
